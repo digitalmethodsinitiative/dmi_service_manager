@@ -1,0 +1,17 @@
+# DMI Service Manager config files
+config.yml
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.pyc
+
+# Logs:
+*.log
+
+# Environments
+venv/
+
+# PyCharm
+.idea/
