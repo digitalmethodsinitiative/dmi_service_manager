@@ -1,8 +1,7 @@
 # Rename/copy this file as config.yml and edit as necessary
 
-SECRET_KEY: secret key
-
-4CAT_DATASETS_PATH: # 4CAT datasets directory must be accessible to dmi_service_manager for services to access necessary files
+# General settings
+SECRET_KEY: secret key # Flask application secret key
 
 TRUSTED_PROXIES: # Be sure to include Docker proxy (e.g., 172.17.0.1 )
 #  - 172.17.0.1
@@ -11,6 +10,22 @@ IP_WHITELIST: # Leave blank for access to all
 #  - 172.17.0.1 # Docker proxy to allow on machine with Docker container
 #  - 172.17.0.2 # "Docker, this is Docker speaking"
 
+# File management
+UPLOAD_FOLDER_PATH:
+
+ALLOWED_EXTENSIONS: # extensions allowed to be uploaded
+  - png
+  - jpg
+  - jpeg
+  - gif
+  - csv
+  - wav
+  - mp4
+  - mp3
+
+
+# Grant DMI Service Manager direct access to a 4CAT instance files
+4CAT_DATASETS_PATH:
 
 # Whisper settings
-WHISPER_LIVE: False
+WHISPER_LIVE: False  # Constantly running Whipser container

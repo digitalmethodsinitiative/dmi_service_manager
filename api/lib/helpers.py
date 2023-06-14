@@ -10,3 +10,10 @@ def update_config(config_filepath='config.yml'):
     with open(config_filepath) as file:
         config_data = yaml.load(file, Loader=yaml.FullLoader)
     return config_data
+
+
+def allowed_file(filename, extensions):
+    """
+    Check filenames to ensure they are an allowed extension
+    """
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in extensions

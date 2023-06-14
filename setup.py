@@ -2,7 +2,7 @@ from setuptools import setup
 
 # Universal packages
 packages = [
-	"Flask",
+	"flask",
 	"flask_shell2http",
 	"gunicorn",
 	"pyyaml"
