@@ -28,4 +28,4 @@ ALLOWED_EXTENSIONS: # extensions allowed to be uploaded
 4CAT_DATASETS_PATH:
 
 # Whisper settings
-WHISPER_LIVE: False  # Constantly running Whipser container
+WHISPER_GPU: True  # Whisper runs much faster on GPUs
