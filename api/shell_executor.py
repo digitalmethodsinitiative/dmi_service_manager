@@ -16,12 +16,12 @@ shell2http = Shell2HTTP(app=app, executor=executor, base_url_prefix="/api/")
 # Whisper
 if config_data.get('4CAT_DATASETS_PATH', False):
     fourcat_path = Path(config_data.get('4CAT_DATASETS_PATH'))
-    shell2http.register_command(endpoint="whisper_local", command_name=f"docker run -v {fourcat_path}:/app/data/ {'--gpus all ' if config_data.get('WHISPER_GPU', False) else ''}whisper whisper")
+    shell2http.register_command(endpoint="whisper_local", command_name=f"docker run --rm -v {fourcat_path}:/app/data/ {'--gpus all ' if config_data.get('WHISPER_GPU', False) else ''}whisper whisper")
 else:
     app.logger.warning("4CAT_DATASETS_PATH not set; whisper_local endpoint not available")
 
 if config_data.get('UPLOAD_FOLDER_PATH', False):
     uploads_path = Path(config_data.get('UPLOAD_FOLDER_PATH'))
-    shell2http.register_command(endpoint="whisper_remote", command_name=f"docker run -v {uploads_path}:/app/data/ {'--gpus all ' if config_data.get('WHISPER_GPU', False) else ''}whisper whisper")
+    shell2http.register_command(endpoint="whisper_remote", command_name=f"docker run --rm -v {uploads_path}:/app/data/ {'--gpus all ' if config_data.get('WHISPER_GPU', False) else ''}whisper whisper")
 else:
     app.logger.warning("UPLOAD_FOLDER_PATH not set; whisper_remote endpoint not available")
