@@ -14,16 +14,25 @@ Gunicorn command example
 # Use Services
 All endpoints found at `http://servername/api/`
 
+### Manage files
+The DMI Service Manager has a file manager to help you upload and download files on the server.
+- `/api/list_files?folder_name=your_folder_name`: List all files in `your_folder_name` found in the `UPLOAD_FOLDER_PATH` directory
+- `/api/send_files`: Upload files to the `UPLOAD_FOLDER_PATH` directory
+- `/api/uploads/<string:folder_name>/<string:file_type>/<string:filename>'`: Download files from the `UPLOAD_FOLDER_PATH` directory
+
+See `api/lib/file_manager.py` for more details.
+
 ### Whisper
+Whisper requires the [DMI Whisper Docker image](https://github.com/digitalmethodsinitiative/dmi_dockerized_services/tree/main/openai_whisper) to be available with the tag `whisper`.
 
 Endpoints:
-- `whisper`: Creates a new Docker container from the whisper image
-- `whisper_live`: Can be used if a running Whisper Docker container is live (setting in config.yml; this is necessary if server does not have GPU) 
+- `whisper_remote`: Used with files uploaded to the directory (set `UPLOAD_FOLDER_PATH` in config.yml)
+- `whisper_local`: Used with a local directory linked to a 4CAT instance (set `4CAT_DATASETS_PATH` in config.yml)
 
-Post via curl or python requests commands to DMI Service Manager endpoint: '/api/whisper'
+Post via curl or python requests commands to DMI Service Manager endpoint: '/api/whisper_local' or '/api/whisper_remote'
 ```
 import requests
-# Note, the `data` folder in the container is mapped to your `4CAT_DATASETS_PATH` in config.yml
+# Note, the `data` folder in the container is mapped to your `4CAT_DATASETS_PATH` or `UPLOAD_FOLDER_PATH` in config.yml
 data = {"args" : ['--output_dir', "data/text/", '--output_format', "json", "--model", "medium", "data/audio/audio_file.wav"]}
 resp = requests.post("http://localhost:4000/api/whisper_new", json=data)
 ```
