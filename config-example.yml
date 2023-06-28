@@ -3,12 +3,9 @@
 # General settings
 SECRET_KEY: secret key # Flask application secret key
 
-TRUSTED_PROXIES: # Be sure to include Docker proxy (e.g., 172.17.0.1 )
-#  - 172.17.0.1
+TRUSTED_PROXIES:
 
 IP_WHITELIST: # Leave blank for access to all
-#  - 172.17.0.1 # Docker proxy to allow on machine with Docker container
-#  - 172.17.0.2 # "Docker, this is Docker speaking"
 
 # File management
 UPLOAD_FOLDER_PATH:
@@ -27,5 +24,4 @@ ALLOWED_EXTENSIONS: # extensions allowed to be uploaded
 # Grant DMI Service Manager direct access to a 4CAT instance files
 4CAT_DATASETS_PATH:
 
-# Whisper settings
-WHISPER_GPU: True  # Whisper runs much faster on GPUs
+GPU_ENABLED: True
