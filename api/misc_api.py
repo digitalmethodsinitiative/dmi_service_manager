@@ -16,7 +16,7 @@ def check_gpu_mem(service_id):
     if not config_data.get('GPU_ENABLED', False):
         return jsonify({'reason': 'GPU not enabled on this instance of DMI Service Manager'}), 400
 
-    if service_id not in ['whipser', 'clip']:
+    if service_id not in ['whisper', 'clip']:
         # TODO: manage services interactively
         return jsonify({'reason': 'Service not found'}), 404
 
@@ -28,8 +28,8 @@ def check_gpu_mem(service_id):
     if remote.stdout:
         results = json.loads(remote.stdout.split("\n")[-2])
         if results['gpu_free_mem'] == 0:
-            return jsonify({'reason': 'GPU not available; unable to use %s' % service_id}), 503
+            return jsonify({'reason': 'GPU not available; unable to use %s' % service_id, 'memory': results}), 503
         else:
-            return jsonify({'reason': results}), 200
+            return jsonify({'reason': 'GPU available', 'memory': results}), 200
 
     return jsonify({'reason': 'Unknown error'}), 500
