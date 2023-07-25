@@ -38,6 +38,7 @@ app.secret_key = config_data.get('SECRET_KEY')
 import api.access
 import api.shell_executor
 import api.file_management
+import api.misc_api
 
 # Run API
 if __name__ == "__main__":
