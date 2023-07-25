@@ -6,7 +6,7 @@ import json
 from api import app, config_data
 
 
-@app.route('/api/check_gpu_mem/<string:service_id>', methods=['POST'])
+@app.route('/api/check_gpu_mem/<string:service_id>', methods=['GET'])
 def check_gpu_mem(service_id):
     """
     Check GPU memory usage for a service
