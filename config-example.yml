@@ -8,7 +8,9 @@ TRUSTED_PROXIES:
 IP_WHITELIST: # Leave blank for access to all
 
 # File management
-UPLOAD_FOLDER_PATH:
+4CAT_DATASETS_PATH:  # Grant DMI Service Manager direct access to a local 4CAT instance's files
+
+UPLOAD_FOLDER_PATH:  # Path to allow remote endpoints to upload/download files
 
 ALLOWED_EXTENSIONS: # extensions allowed to be uploaded
   - png
@@ -20,8 +22,26 @@ ALLOWED_EXTENSIONS: # extensions allowed to be uploaded
   - mp4
   - mp3
 
-
-# Grant DMI Service Manager direct access to a 4CAT instance files
-4CAT_DATASETS_PATH:
-
+# Enable GPU support
 GPU_ENABLED: True
+
+# Set up Docker endpoints; these images must be available locally (use Docker to pull and tag as necessary)
+DOCKER_ENDPOINTS:
+  whisper:
+    image_name: whisper
+    local: False  # Set to True if 4CAT is running locally
+    remote: False  # Set to True if 4CAT is running remotely
+    command: whisper
+    data_path: /app/data/
+  clip:
+    image_name: clip
+    local: True
+    remote: True
+    command: python3 clip_interface.py
+    data_path: /app/data/
+  pixplot:
+    image_name: pix_plot_test
+    local: True
+    remote: False
+    command: python /app/pixplot/pixplot.py
+    data_path: /app/data/
