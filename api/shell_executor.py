@@ -7,29 +7,34 @@ from pathlib import Path
 
 from api import app, config_data
 
-# Setup Executor
-executor = Executor(app)
-shell2http = Shell2HTTP(app=app, executor=executor, base_url_prefix="/api/")
+active_endpoints = config_data.get('DOCKER_ENDPOINTS', False)
 
-# Register commands
-
-# Local Endpoints
-if config_data.get('4CAT_DATASETS_PATH', False):
-    fourcat_path = Path(config_data.get('4CAT_DATASETS_PATH'))
-
-    # Whisper
-    shell2http.register_command(endpoint="whisper_local", command_name=f"docker run --rm -v {fourcat_path}:/app/data/ {'--gpus all ' if config_data.get('GPU_ENABLED', False) else ''}whisper whisper")
-    # CLIP
-    shell2http.register_command(endpoint="clip_local", command_name=f"docker run --rm -v {fourcat_path}:/app/data/ {'--gpus all ' if config_data.get('GPU_ENABLED', False) else ''}clip python3 clip_interface.py")
+if not active_endpoints:
+    app.logger.warning("DOCKER_ENDPOINTS not set; no endpoints available")
 else:
-    app.logger.warning("4CAT_DATASETS_PATH not set; local endpoints not available")
+    # Setup Executor
+    executor = Executor(app)
+    shell2http = Shell2HTTP(app=app, executor=executor, base_url_prefix="/api/")
 
-# Remote Endpoints
-if config_data.get('UPLOAD_FOLDER_PATH', False):
-    uploads_path = Path(config_data.get('UPLOAD_FOLDER_PATH'))
-    shell2http.register_command(endpoint="whisper_remote", command_name=f"docker run --rm -v {uploads_path}:/app/data/ {'--gpus all ' if config_data.get('GPU_ENABLED', False) else ''}whisper whisper")
-    # CLIP
-    shell2http.register_command(endpoint="clip_remote",
-                                command_name=f"docker run --rm -v {uploads_path}:/app/data/ {'--gpus all ' if config_data.get('GPU_ENABLED', False) else ''}clip python3 clip_interface.py")
-else:
-    app.logger.warning("UPLOAD_FOLDER_PATH not set; whisper_remote endpoint not available")
+    # Local path
+    if config_data.get('4CAT_DATASETS_PATH', False):
+        fourcat_path = Path(config_data.get('4CAT_DATASETS_PATH'))
+    else:
+        app.logger.warning("4CAT_DATASETS_PATH not set; local endpoints not available")
+        fourcat_path = None
+
+    # Remote path
+    if config_data.get('UPLOAD_FOLDER_PATH', False):
+        uploads_path = Path(config_data.get('UPLOAD_FOLDER_PATH'))
+    else:
+        app.logger.warning("UPLOAD_FOLDER_PATH not set; remote endpoints not available")
+        uploads_path = None
+
+    # Register endpoints
+    for endpoint, endpoint_data in active_endpoints.items():
+        if fourcat_path and endpoint_data['local']:
+            shell2http.register_command(endpoint=f"{endpoint}_local",
+                                        command_name=f"docker run --rm -v {fourcat_path}:{endpoint_data['data_path']} {'--gpus all ' if config_data.get('GPU_ENABLED', False) else ''}{endpoint_data['image_name']} {endpoint_data['command']}")
+        if uploads_path and endpoint_data['remote']:
+            shell2http.register_command(endpoint=f"{endpoint}_remote",
+                                        command_name=f"docker run --rm -v {uploads_path}:{endpoint_data['data_path']} {'--gpus all ' if config_data.get('GPU_ENABLED', False) else ''}{endpoint_data['image_name']} {endpoint_data['command']}")
