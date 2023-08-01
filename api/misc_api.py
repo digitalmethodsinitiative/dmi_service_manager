@@ -20,7 +20,7 @@ def check_gpu_mem(service_id):
         # TODO: manage services interactively
         return jsonify({'reason': 'Service not found'}), 404
 
-    command = shlex.split("docker run --rm --gpus all %s python3 -c \"import torch; import json; print(json.dumps({'gpu_total_mem': torch.cuda.get_device_properties(0).total_memory, 'gpu_reserved_mem': torch.cuda.memory_reserved(0), 'gpu_free_mem': torch.cuda.memory_reserved(0) - torch.cuda.memory_allocated(0)}))\"" % service_id)
+    command = shlex.split("docker run --rm --gpus all %s python3 -c \"import torch; import json; current_mem=torch.cuda.mem_get_info(); print(json.dumps({'gpu_total_mem': current_mem[1], 'gpu_free_mem': current_mem[0]}))\"" % service_id)
     remote = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if remote.stderr:
         return jsonify({'reason': remote.stderr}), 500
