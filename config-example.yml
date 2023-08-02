@@ -27,21 +27,27 @@ GPU_ENABLED: True
 
 # Set up Docker endpoints; these images must be available locally (use Docker to pull and tag as necessary)
 DOCKER_ENDPOINTS:
-  whisper:
+  whisper:  # https://github.com/digitalmethodsinitiative/dmi_dockerized_services/
     image_name: whisper
-    local: False  # Set to True if 4CAT is running locally
+    local: True  # Set to True if 4CAT is running locally
     remote: False  # Set to True if 4CAT is running remotely
     command: whisper
     data_path: /app/data/
-  clip:
+  clip:  # https://github.com/digitalmethodsinitiative/dmi_dockerized_services/
     image_name: clip
     local: True
-    remote: True
+    remote: False
     command: python3 clip_interface.py
     data_path: /app/data/
-  pixplot:
+  pixplot:  # https://github.com/digitalmethodsinitiative/dmi_pix_plot
     image_name: pix_plot_test
     local: True
     remote: False
     command: python /app/pixplot/pixplot.py
+    data_path: /app/data/
+  ocr:  # https://github.com/digitalmethodsinitiative/ocr_server
+    image_name: ocr_server
+    local: True
+    remote: False
+    command: python cli_interface.py
     data_path: /app/data/
