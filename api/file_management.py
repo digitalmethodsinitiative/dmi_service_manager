@@ -10,6 +10,21 @@ from api import app, config_data
 from api.lib.helpers import allowed_file
 
 
+def get_folder_from_request(request):
+    """
+    Get folder name from request
+    """
+    if request.form['folder_name']:
+        folder_name = request.form['folder_name']
+    else:
+        # New randomly assigned folder_name
+        folder_name = uuid.uuid4().hex
+        while os.path.isdir(os.path.join(config_data.get("UPLOAD_FOLDER_PATH"), folder_name)):
+            # Taken; try again
+            folder_name = uuid.uuid4().hex
+
+    return folder_name
+
 @app.route('/api/list_filenames/<path:folder_name>', methods=['GET'])
 def list_filenames(folder_name):
     """
@@ -62,7 +77,6 @@ def upload_files_api():
     Optional:
     data = {'folder_name' : 'desired_name'}
     """
-    app.logger.debug(f"allowed extensions: {config_data.get('ALLOWED_EXTENSIONS')}")
     if not config_data.get("UPLOAD_FOLDER_PATH"):
         return jsonify({'reason': 'This instance of DMI Service Manager not configured to allow uploads'}), 400
 
@@ -71,20 +85,11 @@ def upload_files_api():
         app.logger.debug('No files received')
         return {'reason': 'No files received; check request formatting'}, 400
 
-    if request.form['folder_name']:
-        folder_name = request.form['folder_name']
-    else:
-        # New randomly assigned folder_name
-        folder_name = uuid.uuid4().hex
-        while os.path.isdir(os.path.join(config_data.get("UPLOAD_FOLDER_PATH"), folder_name)):
-            # Taken; try again
-            folder_name = uuid.uuid4().hex
+    folder_name = get_folder_from_request(request)
 
     folder_path = os.path.join(config_data.get("UPLOAD_FOLDER_PATH"), folder_name)
     if not os.path.isdir(folder_path):  # Make folder if it does not exist
         os.mkdir(folder_path)
-
-    app.logger.info(f"Uploading files to {folder_name}")
 
     files_uploaded = {}
     for file_type in request.files:
