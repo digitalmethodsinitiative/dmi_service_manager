@@ -21,6 +21,7 @@ ALLOWED_EXTENSIONS: # extensions allowed to be uploaded
   - wav
   - mp4
   - mp3
+  - json
 
 # Enable GPU support
 GPU_ENABLED: True
@@ -51,3 +52,9 @@ DOCKER_ENDPOINTS:
     remote: False
     command: python cli_interface.py
     data_path: /app/data/
+  stable_diffusion:  # https://github.com/digitalmethodsinitiative/dmi_dockerized_services/
+    image_name: sd
+    local: True
+    remote: False
+    command: python interface.py
+    data_path: /app/data
