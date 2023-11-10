@@ -53,7 +53,7 @@ DOCKER_ENDPOINTS:
     command: python cli_interface.py
     data_path: /app/data/
   stable_diffusion:  # https://github.com/digitalmethodsinitiative/dmi_dockerized_services/
-    image_name: sd
+    image_name: stable_diffusion
     local: True
     remote: False
     command: python interface.py
