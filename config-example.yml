@@ -56,5 +56,5 @@ DOCKER_ENDPOINTS:
     image_name: stable_diffusion
     local: True
     remote: False
-    command: python interface.py
+    command: python3 interface.py
     data_path: /app/data
