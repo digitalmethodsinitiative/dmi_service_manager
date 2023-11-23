@@ -16,7 +16,7 @@ def check_gpu_mem(service_id):
     if not config_data.get('GPU_ENABLED', False):
         return jsonify({'reason': 'GPU not enabled on this instance of DMI Service Manager'}), 400
 
-    if service_id not in ['whisper', 'clip', 'stable_diffusion']:
+    if service_id not in ['whisper', 'clip', 'stable_diffusion', 'stormtrooper']:
         # TODO: manage services interactively
         return jsonify({'reason': 'Service not found'}), 404
 

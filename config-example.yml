@@ -58,3 +58,9 @@ DOCKER_ENDPOINTS:
     remote: False
     command: python3 interface.py
     data_path: /app/data
+  stormtrooper:  # https://github.com/digitalmethodsinitiative/dmi_dockerized_services/
+    image_name: stormtrooper
+    local: True
+    remote: False
+    command: python3 interface.py
+    data_path: /app/data
