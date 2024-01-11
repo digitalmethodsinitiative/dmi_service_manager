@@ -9,7 +9,7 @@
 
 ### Run server
 Gunicorn command example
-`python3 -m gunicorn --worker-tmp-dir /dev/shm --workers=4 --threads=4 --worker-class=gthread --log-level=debug --reload --bind 0.0.0.0:4000 api:app`
+`python3 -m gunicorn --worker-tmp-dir /dev/shm --workers=1 --threads=12 --worker-class=gthread --log-level=debug --reload --bind 0.0.0.0:4000 api:app`
 
 # Use Services
 All endpoints found at `http://servername/api/`
