@@ -17,3 +17,24 @@ def allowed_file(filename, extensions):
     Check filenames to ensure they are an allowed extension
     """
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in extensions
+
+
+def count_lines(path):
+    """
+    Get the amount of (new)lines in a file.
+
+    Thanks to https://stackoverflow.com/a/27517681!
+
+    :param path:  File to read
+    :return int:  Amount of lines
+    """
+    def _make_gen(reader):
+        b = reader(1024 * 1024)
+        while b:
+            yield b
+            b = reader(1024 * 1024)
+
+    with open(path, "rb") as f:
+        f_gen = _make_gen(f.raw.read)
+
+        return sum(buf.count(b"\n") for buf in f_gen)

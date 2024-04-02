@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 
 
 from api import app, config_data
-from api.lib.helpers import allowed_file
+from api.lib.helpers import allowed_file, count_lines
 
 
 def get_folder_from_request(request):
@@ -24,6 +24,34 @@ def get_folder_from_request(request):
             folder_name = uuid.uuid4().hex
 
     return folder_name
+
+
+@app.route("/api/linecount/", methods=["GET"])
+def get_linecount():
+    """
+    Get line count for a file in the upload folder
+
+    This is useful for tracking progress for services that write one line per
+    item to the results file.
+    """
+    folder_name = request.args.get("folder")
+    file_name = request.args.get("file")
+
+    if not folder_name or not file_name:
+        app.logger.warning('No file path provided')
+        return jsonify({'reason': 'Must provide file path (with ?folder and ?file)'}), 400
+
+    data_folder = Path(config_data.get("UPLOAD_FOLDER_PATH")).resolve()
+    file_path = data_folder.joinpath(folder_name).joinpath(file_name).resolve()
+
+    # no shenanigans!
+    is_good_path = (os.path.commonprefix((data_folder, file_path)) == str(data_folder))
+
+    if not file_path.exists() or not is_good_path:
+        return jsonify({'reason': 'file_path %s does not exist' % file_path}), 404
+
+    return jsonify({"lines": count_lines(file_path)})
+
 
 @app.route('/api/list_filenames/<path:folder_name>', methods=['GET'])
 def list_filenames(folder_name):
@@ -101,11 +129,13 @@ def upload_files_api():
 
         files = request.files.getlist(file_type)
         for file in files:
-            app.logger.debug(f"Uploading {file_type} file: {str(file)}")
             if file and allowed_file(file.filename, config_data.get("ALLOWED_EXTENSIONS")):
                 filename = secure_filename(file.filename)
+                app.logger.debug(f"Uploading {file_type} file: {str(file)} as {filename}")
                 file.save(os.path.join(file_type_path, filename))
                 files_uploaded[file_type].append(file.filename)
+            else:
+                app.logger.debug(f"Skipping uploaded {file_type} file: {str(file)}")
 
     response = {
         'folder_name': folder_name,
