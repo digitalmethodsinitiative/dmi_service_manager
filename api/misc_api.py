@@ -6,6 +6,15 @@ import json
 from api import app, config_data
 
 
+@app.route('/api/', methods=['GET'])
+def list_endpoints():
+    endpoints = {
+        'endpoints': [
+            'check_gpu_mem'
+        ]
+    }
+    return jsonify(endpoints), 200
+
 @app.route('/api/check_gpu_mem/<string:service_id>', methods=['GET'])
 def check_gpu_mem(service_id):
     """
@@ -16,8 +25,7 @@ def check_gpu_mem(service_id):
     if not config_data.get('GPU_ENABLED', False):
         return jsonify({'reason': 'GPU not enabled on this instance of DMI Service Manager'}), 400
 
-    if service_id not in ['whisper', 'clip', 'stable_diffusion', 'stormtrooper', 'image_classification']:
-        # TODO: manage services interactively
+    if service_id not in config_data.get("DOCKER_ENDPOINTS").keys():
         return jsonify({'reason': 'Service not found'}), 404
 
     command = shlex.split("docker run --rm --gpus all %s python3 -c \"import torch; import json; current_mem=torch.cuda.mem_get_info(); print(json.dumps({'gpu_total_mem': current_mem[1], 'gpu_free_mem': current_mem[0]}))\"" % service_id)
