@@ -120,6 +120,7 @@ def upload_files_api():
         os.mkdir(folder_path)
 
     files_uploaded = {}
+    errors = {}
     for file_type in request.files:
         if file_type not in files_uploaded:
             files_uploaded[file_type] = []
@@ -136,11 +137,17 @@ def upload_files_api():
                 files_uploaded[file_type].append(file.filename)
             else:
                 app.logger.debug(f"Skipping uploaded {file_type} file: {str(file)}")
+                errors[file.filename] = 'File type not allowed'
+
+    if len(files_uploaded) == 0:
+        return jsonify({'reason': 'Unable to upload files!', 'errors': errors}), 405
 
     response = {
         'folder_name': folder_name,
         **files_uploaded,
     }
+    if errors:
+        response['errors'] = errors
 
     return jsonify(response), 200
 
