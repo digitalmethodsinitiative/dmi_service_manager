@@ -30,9 +30,8 @@ fs2h_logger.setLevel(logging.DEBUG)  # this is really important!
 
 # Config app
 config_data = update_config("config.yml")
-# trusted_proxies = config_data.get('TRUSTED_PROXIES')
-# ip_whitelist = config_data.get('IP_WHITELIST')
 app.secret_key = config_data.get('SECRET_KEY')
+app.config["endpoints"] = set()
 
 # Import api modules
 import api.access

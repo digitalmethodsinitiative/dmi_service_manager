@@ -8,11 +8,14 @@ from api import app, config_data
 
 @app.route('/api/', methods=['GET'])
 def list_endpoints():
-    endpoints = {
-        'endpoints': [
-            'check_gpu_mem'
-        ]
-    }
+    """
+    List all available endpoints. Most endpoints are registered in shell_executor.py.
+    :return:
+    """
+    app.config["endpoints"].add("/api/")
+    app.config["endpoints"].add("/api/check_gpu_mem/<string:service_id>")
+
+    endpoints = {"endpoints": list(app.config["endpoints"])}
     return jsonify(endpoints), 200
 
 @app.route('/api/check_gpu_mem/<string:service_id>', methods=['GET'])

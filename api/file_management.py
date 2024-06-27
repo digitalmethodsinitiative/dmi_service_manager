@@ -9,6 +9,15 @@ from werkzeug.utils import secure_filename
 from api import app, config_data
 from api.lib.helpers import allowed_file, count_lines
 
+# Register endpoints
+endpoints = [
+    "/api/linecount/",
+     "/api/list_filenames/<path:folder_name>",
+     "/api/send_files",
+     "/api/download/<path:filepath>",
+]
+for endpoint in endpoints:
+    app.config["endpoints"].add(endpoint)
 
 def get_folder_from_request(request):
     """
