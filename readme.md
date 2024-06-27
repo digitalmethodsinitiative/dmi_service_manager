@@ -1,17 +1,19 @@
 # DMI Service Manager
-The Digital Methods Service Manager is a simple API built to run Docker containers and handle file management. Primarily
+The Digital Methods Service Manager is an API built to run Docker containers and handle file management. Primarily
 it is to run GPU intensive tasks in a containerized environment and provide the result files to the user. The DMI Service
 Manager was built to work with the [4CAT Capture and Analysis Toolkit](https://github.com/digitalmethodsinitiative/4cat?tab=readme-ov-file#-4cat-capture-and-analysis-toolkit)
 as a way to offload certain analyses to a more capable server. A number of services are available to run on the DMI 
-Service Manager, examples can be found in the [DMI Dockerized Services repository](https://github.com/digitalmethodsinitiative/dmi_dockerized_services/tree/main?tab=readme-ov-file#dmi-dockerized-services).
+Service Manager and some examples can be found in the [DMI Dockerized Services repository](https://github.com/digitalmethodsinitiative/dmi_dockerized_services/tree/main?tab=readme-ov-file#dmi-dockerized-services).
 
 The DMI Service Manager will have access to specific endpoints as defined in `config.yml`. It will create a Docker 
 container from the image specified by `image_name` and run the command specified by `command` with the arguments 
 provided.
 
+[Navigate here for information and examples of 4CAT analyses using the DMI Service Manager](https://docs.google.com/document/d/1hrzxsQVE0bDeVgKZFBJ3UIrkmAEcKdNTm2mT8fiwsuM/edit).
+
 # Installation
 Setting up the DMI Service Manager requires two main steps: installation of the DMI Service Manager itself and building
-(or downloading) the Docker images for the services you want to run. You will also need to have Docker itself installed.
+(or downloading) the Docker images for the services you want to run. You will also need to have [Docker itself installed](https://docs.docker.com/engine/install/).
 
 ## DMI Service Manager installation
 
@@ -26,8 +28,6 @@ Setting up the DMI Service Manager requires two main steps: installation of the 
     - `cp config.yml.example config.yml`
     - `nano config.yml`
 ### Configuration
-- `IP_WHITELIST`: It is recommended that you use the `IP_WHITELIST` to restrict access to the DMI Service Manager
-- `TRUSTED_PROXIES`: If you are using a reverse proxy, you may need to set the `TRUSTED_PROXIES` variable to the IP of the reverse proxy, only used in conjunction with the `IP_WHITELIST`
 - `UPLOAD_FOLDER_PATH`: The path to the folder where files will be uploaded to; only necessary if you want to use the file manager
 - `4CAT_DATASETS_PATH`: The path to the folder where 4CAT datasets are stored; only necessary if 4CAT is installed on the same server
   - This is a useful feature as it avoids the need to upload and download files
@@ -40,6 +40,8 @@ Setting up the DMI Service Manager requires two main steps: installation of the 
   -  `remote`: an endpoint to use the `UPLOAD_FOLDER_PATH`
   -  `command`: the command to run in the Docker container (you can add arguments to the command in the request)
   -  `data_path`: the path to the data folder inside the Docker container
+- `IP_WHITELIST`: It is recommended that you use the `IP_WHITELIST` to restrict access to the DMI Service Manager if your server is accessible to the wider world
+- `TRUSTED_PROXIES`: If you are using a reverse proxy, you may need to set the `TRUSTED_PROXIES` variable to the IP of the reverse proxy, only used in conjunction with the `IP_WHITELIST`
 
 The local and remote endpoints are used to specify the location where the volumes are mounted and result files can be
 obtained.
@@ -56,7 +58,7 @@ following the instructions in the DMI Dockerized Services repository.
 
 
 ## Run server
-Once the DMI Service Manager is set up, and your Docker images are ready, you can run the server using the following 
+Once the DMI Service Manager is set up and your Docker images are ready, you can run the server using the following 
 example Gunicorn command:
 `python3 -m gunicorn --worker-tmp-dir /dev/shm --workers=1 --threads=12 --worker-class=gthread --log-level=debug --reload --bind 0.0.0.0:4000 api:app`
 
@@ -71,10 +73,13 @@ set the `DMI Service Manager server/URL` to the server where the DMI Service Man
 4CAT and the DMI Service Manager are on the same server. You can then enable the individual services you want to use and
 adjust any relevant settings.
 
+![image](https://github.com/digitalmethodsinitiative/dmi_service_manager/assets/32108944/856e75c2-af59-4d39-b099-3b54bf2b4608)
 
+You are now good to go!
 
 # DMI Service Manager API
-All endpoints can found at `http://servername/api/` (e.g. `http://localhost:4000/api/` in the example above).
+If you would like to use these services directly without 4CAT, you can use the endpoints directly. All endpoints can 
+found at `http://servername/api/` (e.g. `http://localhost:4000/api/` in the example above).
 
 ### Manage files
 The DMI Service Manager has a file manager to help you upload and download files on the server.
