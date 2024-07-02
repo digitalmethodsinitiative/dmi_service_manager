@@ -56,6 +56,28 @@ them or download them from a repository (such as Docker Hub). The images we have
 various ML models and their dependencies. We thus have not uploaded them to Docker Hub, and they will need to be built 
 following the instructions in the DMI Dockerized Services repository.
 
+### Example setup for Whisper container
+1. Clone DMI Dockerized Services repository
+   -  `git clone https://github.com/digitalmethodsinitiative/dmi_dockerized_services.git`
+2. Navigate into the Whisper folder containing its `Dockerfile` and build the Docker image
+   -  `cd openai_whisper`
+   -  `docker build -t whisper .`
+   -  You can read the README.md file in this folder for additional information on the container
+3. Update your DMI Service Manager config.yml `DOCKER_ENDPOINTS` to activate this image
+   ```
+   whisper: 
+    image_name: whisper
+    local: True  # Set to True if 4CAT is running locally
+    remote: False  # Set to True if 4CAT is running remotely
+    command: whisper
+    data_path: /app/data/
+   ```
+   - `image_name` matches the `-t` tag given in the `docker build` command
+   - `local` or `remote` should be set depending on where you wish to access the Whisper container from (or where your 4CAT server is running)
+   - `command` can be found in the README.md file in the openai_whisper folder (arguments following the command will be added to your API request)
+   - `data_path` is flexible, but may have restrictions in the README.md file; it is where the Whisper container expects data to be uploaded and/or results saved
+4. Run your server!
+   - see next section
 
 ## Run server
 Once the DMI Service Manager is set up and your Docker images are ready, you can run the server using the following 
