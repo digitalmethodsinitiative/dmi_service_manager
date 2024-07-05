@@ -43,8 +43,8 @@ def get_linecount():
     This is useful for tracking progress for services that write one line per
     item to the results file.
     """
-    folder_name = request.args.get("folder")
-    file_name = request.args.get("file")
+    folder_name = re.sub(r"[^a-zA-Z0-9_-]", "", request.args.get("folder"))
+    file_name = re.sub(r"[^a-zA-Z0-9_.-]", "", request.args.get("file"))
 
     if not folder_name or not file_name:
         app.logger.warning('No file path provided')
@@ -57,7 +57,7 @@ def get_linecount():
     is_good_path = (os.path.commonprefix((data_folder, file_path)) == str(data_folder))
 
     if not file_path.exists() or not is_good_path:
-        return jsonify({'reason': 'file_path %s does not exist' % file_path}), 404
+        return jsonify({'reason': "File path %s does not exist"}), 404
 
     return jsonify({"lines": count_lines(file_path)})
 
