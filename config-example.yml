@@ -1,6 +1,8 @@
 # Rename/copy this file as config.yml and edit as necessary
 
 # General settings
+DATABASE_FILE: data/dmi_sm_db.sqlite # Path to the SQLite database file
+
 SECRET_KEY: secret key # Flask application secret key
 
 TRUSTED_PROXIES:

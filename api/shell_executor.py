@@ -1,14 +1,75 @@
 """
 Allow controlled command line access to certain API endpoints
 """
+import json
+from datetime import datetime
 from flask_executor import Executor
+from flask_executor.futures import Future
 from flask_shell2http import Shell2HTTP
 from pathlib import Path
+import functools
+from flask import request
 
-from api import app, config_data
+from api import app, config_data, db
 
 active_endpoints = config_data.get('DOCKER_ENDPOINTS', False)
 base_url_prefix = "/api/"
+
+def create_job_record(f):
+    @functools.wraps(f)
+    def decorator(*args, **kwargs):
+        # Insert into database
+        job_data = {"request_args": request.args, "request_json": request.json}
+        key = db.insert("INSERT INTO jobs (created_at, jobtype, status, details) VALUES (?, ?, ?, ?)",
+                        (int(datetime.now().timestamp()), request.path, "created", json.dumps(job_data)))
+
+        # Pass key to route
+        request.json["callback_context"] = {"db_key": key}
+        #NOTE: request.json["args"] is a list of arguments for the shell command; we can add the job key here for services able to utilize and update status
+        if request.json.get("pass_key", False):
+            # TODO We could add the key to known services that expect it
+            # Request knows to pass key
+            if "args" not in request.json:
+                request.json["args"] = []
+            request.json.get("args", []).extend(["--database_key", str(key), "--dmi_sm_server", request.url_root])
+
+        # Run the route
+        response = f(*args, **kwargs)
+
+        # Collect results and update database
+        func_results = response.json
+        job_data.update({
+            # This key is unfortunately only accessible by the Flask/Gunicorn worker that creates the service
+            "service_key": func_results.get("key", "unknown")
+        })
+        status = func_results.get("status", "unknown")
+        db.insert("UPDATE jobs SET status = ?, details = ? WHERE id = ?", (status, json.dumps(job_data), key))
+
+        return response
+    return decorator
+
+def my_callback_fn(extra_callback_context, future: Future):
+    """
+    Will be invoked on every process completion
+    """
+    db_key = extra_callback_context.get("db_key")
+    if db_key:
+        if future.done():
+            status = "complete"
+            db.insert("UPDATE jobs SET status = ?, completed_at = ?, results = ? WHERE id = ?", (status, int(datetime.now().timestamp()), json.dumps(future.result()), db_key))
+            app.logger.info(f"Updated job {db_key}: {status}")
+            return
+    message = (
+            f"{'*' * 64}\n"
+            f"ERROR w/ service db_key: {db_key}\n"
+            f"[i] Process running ?: {future.running()}\n"
+            f"[i] Process completed ?: {future.done()}\n"
+            # future.result() has our key
+            f"[+] Result: {future.result()}\n"
+            f"[+] Context: {extra_callback_context}\n"
+            f"{'*' * 64}"
+            )
+    app.logger.error(message)
 
 if not active_endpoints:
     app.logger.warning("DOCKER_ENDPOINTS not set; no endpoints available")
@@ -34,11 +95,14 @@ else:
     # Register endpoints
     for endpoint, endpoint_data in active_endpoints.items():
         if fourcat_path and endpoint_data['local']:
+            # Docker ENV variable? Could add status pingback route to ENV variable
             shell2http.register_command(endpoint=f"{endpoint}_local",
-                                        command_name=f"docker run --rm -v {fourcat_path}:{endpoint_data['data_path']} {'--gpus all ' if config_data.get('GPU_ENABLED', False) else ''}{endpoint_data['image_name']} {endpoint_data['command']}")
+                                        command_name=f"docker run --rm --network host -v {fourcat_path}:{endpoint_data['data_path']} {'--gpus all ' if config_data.get('GPU_ENABLED', False) else ''}{endpoint_data['image_name']} {endpoint_data['command']}",
+                                        decorators=[create_job_record], callback_fn=my_callback_fn)
             app.config["endpoints"].add(f"{base_url_prefix}{endpoint}_local")
         if uploads_path and endpoint_data['remote']:
             shell2http.register_command(endpoint=f"{endpoint}_remote",
-                                        command_name=f"docker run --rm -v {uploads_path}:{endpoint_data['data_path']} {'--gpus all ' if config_data.get('GPU_ENABLED', False) else ''}{endpoint_data['image_name']} {endpoint_data['command']}")
+                                        command_name=f"docker run --rm --network host -e DMI_SM_SERVER='{request.base_url}' -v {uploads_path}:{endpoint_data['data_path']} {'--gpus all ' if config_data.get('GPU_ENABLED', False) else ''}{endpoint_data['image_name']} {endpoint_data['command']}",
+                                        decorators=[create_job_record], callback_fn=my_callback_fn)
             app.config["endpoints"].add(f"{base_url_prefix}{endpoint}_remote")
 
