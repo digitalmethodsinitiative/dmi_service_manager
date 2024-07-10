@@ -42,3 +42,15 @@ def list_jobs():
 
     app.logger.info(f"Collected {'current' if current else 'all'} ({len(jobs)}) jobs")
     return jsonify({"status": "success", "jobs": jobs}), 200
+
+@app.route('/api/jobs/<string:database_key>', methods=['GET'])
+def job_status(database_key):
+    """
+    List all jobs
+    """
+    if not database_key:
+        return jsonify({"status": "error", "message": "job_status must include 'database_key'"}), 400
+
+    job = dict(db.select("SELECT * FROM jobs WHERE id = ?", (database_key)).__next__())
+
+    return jsonify({"status": "success", "job": job}), 200

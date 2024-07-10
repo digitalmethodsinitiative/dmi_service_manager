@@ -56,15 +56,19 @@ class Database:
         cursor.row_factory = sqlite3.Row
         return connection, cursor
 
-    def select(self, sql):
+    def select(self, sql, values=None):
         """
         Select rows from the database
 
+        :param values:
         :param str sql: SQL query
         :return list: List of rows
         """
         connection, cursor = self.get_db()
-        cursor.execute(sql)
+        if values:
+            cursor.execute(sql, values)
+        else:
+            cursor.execute(sql)
         try:
             for row in cursor.fetchall():
                 yield row

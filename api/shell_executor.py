@@ -8,7 +8,7 @@ from flask_executor.futures import Future
 from flask_shell2http import Shell2HTTP
 from pathlib import Path
 import functools
-from flask import request
+from flask import request, url_for
 
 from api import app, config_data, db
 
@@ -31,7 +31,7 @@ def create_job_record(f):
         # Pass key and server address to service if requested
         #NOTE: request.json["args"] is a list of arguments for the shell command; we can add the job key here for services able to utilize and update status
         if request.json.get("pass_key", False):
-            # TODO We could add the key to known services that expect it
+            # TODO We could also add the key to known services that expect it
             # Request knows to pass key
             if "args" not in request.json:
                 request.json["args"] = []
@@ -41,28 +41,33 @@ def create_job_record(f):
         response = f(*args, **kwargs)
 
         # Collect results and update database
-        func_results = response.json
+        response_json = response.get_json()
         job_data.update({
             # This key is unfortunately only accessible by the Flask/Gunicorn worker that creates the service
-            "service_key": func_results.get("key", "unknown")
+            "service_key": response_json.get("key", "unknown")
         })
-        status = func_results.get("status", "unknown")
+        status = response_json.get("status", "unknown")
         db.insert("UPDATE jobs SET status = ?, details = ? WHERE id = ?", (status, json.dumps(job_data), key))
+
+        # Update response with job key and result_url
+        # result_url is only available to current worker; use route to collect results from database
+        response_json["key"] = key
+        response_json["result_url"] = request.base_url + url_for("job_status", database_key=key)
+        response.data = json.dumps(response_json)
 
         return response
     return decorator
 
 def finish_service(extra_callback_context, future: Future):
     """
-    Will be invoked on every process completion
+    Will be invoked on every service completion
     """
     db_key = extra_callback_context.get("db_key")
-    if db_key:
-        if future.done():
-            status = "complete"
-            db.insert("UPDATE jobs SET status = ?, completed_at = ?, results = ? WHERE id = ?", (status, int(datetime.now().timestamp()), json.dumps(future.result()), db_key))
-            app.logger.info(f"Updated job {db_key}: {status}")
-            return
+    if db_key and future.done():
+        status = "complete"
+        db.insert("UPDATE jobs SET status = ?, completed_at = ?, results = ? WHERE id = ?", (status, int(datetime.now().timestamp()), json.dumps(future.result()), db_key))
+        app.logger.info(f"Updated job {db_key}: {status}")
+        return
     message = (
             f"{'*' * 64}\n"
             f"ERROR w/ service db_key: {db_key}\n"
