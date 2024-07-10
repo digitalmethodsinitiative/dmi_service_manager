@@ -64,7 +64,8 @@ def finish_service(extra_callback_context, future: Future):
     """
     db_key = extra_callback_context.get("db_key")
     if db_key and future.done():
-        status = "complete"
+        returncode = future.result().get("returncode", None)
+        status = "complete" if returncode == 0 else "error"
         db.insert("UPDATE jobs SET status = ?, completed_at = ?, results = ? WHERE id = ?", (status, int(datetime.now().timestamp()), json.dumps(future.result()), db_key))
         app.logger.info(f"Updated job {db_key}: {status}")
         return
