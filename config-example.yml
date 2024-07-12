@@ -32,37 +32,43 @@ GPU_ENABLED: True
 DOCKER_ENDPOINTS:
   whisper:  # https://github.com/digitalmethodsinitiative/dmi_dockerized_services/
     image_name: whisper
-    local: True  # Set to True if 4CAT is running locally
+    local: False  # Set to True if 4CAT is running locally
     remote: False  # Set to True if 4CAT is running remotely
     command: whisper
     data_path: /app/data/
   clip:  # https://github.com/digitalmethodsinitiative/dmi_dockerized_services/
     image_name: clip
-    local: True
+    local: False
     remote: False
     command: python3 clip_interface.py
     data_path: /app/data/
+  blip2: # https://github.com/digitalmethodsinitiative/dmi_dockerized_services/
+    image_name: blip2
+    local: False
+    remote: False
+    command: python3 interface.py
+    data_path: /app/data/
   pixplot:  # https://github.com/digitalmethodsinitiative/dmi_pix_plot
     image_name: pix_plot_test
-    local: True
+    local: False
     remote: False
     command: python /app/pixplot/pixplot.py
     data_path: /app/data/
   ocr:  # https://github.com/digitalmethodsinitiative/ocr_server
     image_name: ocr_server
-    local: True
+    local: False
     remote: False
     command: python cli_interface.py
     data_path: /app/data/
   stable_diffusion:  # https://github.com/digitalmethodsinitiative/dmi_dockerized_services/
     image_name: stable_diffusion
-    local: True
+    local: False
     remote: False
     command: python3 interface.py
     data_path: /app/data
   image_classification: # https://github.com/digitalmethodsinitiative/dmi_dockerized_services/
     image_name: image_classification
-    local: True
+    local: False
     remote: False
     command: python3 classify.py
     data_path: /app/data

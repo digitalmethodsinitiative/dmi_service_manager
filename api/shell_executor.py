@@ -20,6 +20,7 @@ def create_job_record(f):
     def decorator(*args, **kwargs):
         # Insert into database
         job_data = {"request_args": request.args, "request_json": request.json}
+        app.logger.info(f"Creating job record for {request.path}: {job_data}")
         key = db.insert("INSERT INTO jobs (created_at, jobtype, status, details) VALUES (?, ?, ?, ?)",
                         (int(datetime.now().timestamp()), request.path, "created", json.dumps(job_data)))
 
@@ -50,9 +51,9 @@ def create_job_record(f):
         db.insert("UPDATE jobs SET status = ?, details = ? WHERE id = ?", (status, json.dumps(job_data), key))
 
         # Update response with job key and result_url
-        # result_url is only available to current worker; use route to collect results from database
+        # prior result_url is only available to current worker; use route to collect results from database
         response_json["key"] = key
-        response_json["result_url"] = request.base_url + url_for("job_status", database_key=key)
+        response_json["result_url"] = request.url_root + url_for("job_status", database_key=key)
         response.data = json.dumps(response_json)
 
         return response
@@ -67,7 +68,7 @@ def finish_service(extra_callback_context, future: Future):
         returncode = future.result().get("returncode", None)
         status = "complete" if returncode == 0 else "error"
         db.insert("UPDATE jobs SET status = ?, completed_at = ?, results = ? WHERE id = ?", (status, int(datetime.now().timestamp()), json.dumps(future.result()), db_key))
-        app.logger.info(f"Updated job {db_key}: {status}")
+        app.logger.info(f"Service complete: job {db_key} - {status}")
         return
     message = (
             f"{'*' * 64}\n"
@@ -112,7 +113,7 @@ else:
             app.config["endpoints"].add(f"{base_url_prefix}{endpoint}_local")
         if uploads_path and endpoint_data['remote']:
             shell2http.register_command(endpoint=f"{endpoint}_remote",
-                                        command_name=f"docker run --rm --network host -e DMI_SM_SERVER='{request.base_url}' -v {uploads_path}:{endpoint_data['data_path']} {'--gpus all ' if config_data.get('GPU_ENABLED', False) else ''}{endpoint_data['image_name']} {endpoint_data['command']}",
+                                        command_name=f"docker run --rm --network host -v {uploads_path}:{endpoint_data['data_path']} {'--gpus all ' if config_data.get('GPU_ENABLED', False) else ''}{endpoint_data['image_name']} {endpoint_data['command']}",
                                         decorators=[create_job_record], callback_fn=finish_service)
             app.config["endpoints"].add(f"{base_url_prefix}{endpoint}_remote")
 

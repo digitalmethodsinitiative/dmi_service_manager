@@ -51,6 +51,20 @@ def job_status(database_key):
     if not database_key:
         return jsonify({"status": "error", "message": "job_status must include 'database_key'"}), 400
 
-    job = dict(db.select("SELECT * FROM jobs WHERE id = ?", (database_key)).__next__())
+    job = dict(db.select("SELECT * FROM jobs WHERE id = ?", (database_key,)).__next__())
 
     return jsonify({"status": "success", "job": job}), 200
+
+@app.route('/api/jobs/details_query/', methods=['GET'])
+def job_query_details():
+    """
+    Find job by details JSON key-value pair
+    """
+    details_key = request.json.get("details_key")
+    details_value = request.json.get("details_value")
+    if not details_key or not details_value:
+        return jsonify({"status": "error", "message": "job_query_details must include 'details_key' and 'details_value'"}), 400
+
+    jobs = [dict(job) for job in db.select("SELECT * FROM jobs WHERE json_extract(details, ?) = ?", (details_key, details_value))]
+
+    return jsonify({"status": "success", "jobs": jobs}), 200
