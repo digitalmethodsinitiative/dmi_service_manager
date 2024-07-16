@@ -10,6 +10,12 @@ from api.lib.helpers import update_config
 # Flask application instance
 app = Flask(__name__)
 
+if "gunicorn" in os.environ.get("SERVER_SOFTWARE", ""):
+    # Add gunicorn logger to Flask logger
+    gunicorn_logger = logging.getLogger('gunicorn.error')
+    app.logger.handlers = gunicorn_logger.handlers
+    app.logger.setLevel(gunicorn_logger.level)
+
 # Log file
 logFormatter = logging.Formatter("%(asctime)s [%(levelname)-5.5s]  %(message)s")
 # create add stream handler to logger
@@ -21,15 +27,7 @@ file_handler.setFormatter(logFormatter)
 for logger in [app.logger, logging.getLogger("flask_shell2http")]:
     logger.setLevel(logging.DEBUG)
     logger.addHandler(file_handler)
-    if logger is not app.logger:
-        # already has stdout
-        logger.addHandler(stdout_handler)
-
-if "gunicorn" in os.environ.get("SERVER_SOFTWARE", ""):
-    # Add gunicorn logger to Flask logger
-    gunicorn_logger = logging.getLogger('gunicorn.error')
-    app.logger.handlers = gunicorn_logger.handlers
-    app.logger.setLevel(gunicorn_logger.level)
+    logger.addHandler(stdout_handler)
 
 # Config app
 config_data = update_config("config.yml")

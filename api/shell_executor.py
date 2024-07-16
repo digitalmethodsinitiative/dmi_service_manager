@@ -36,7 +36,7 @@ def create_job_record(f):
             # Request knows to pass key
             if "args" not in request.json:
                 request.json["args"] = []
-            request.json.get("args", []).extend(["--database_key", str(key), "--dmi_sm_server", request.url_root])
+            request.json.get("args", []).extend(["--database_key", str(key), "--dmi_sm_server", config_data.get("DMI_SM_SERVER", "http://localhost:5000")])
 
         # Run the route
         response = f(*args, **kwargs)

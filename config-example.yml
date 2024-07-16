@@ -3,6 +3,8 @@
 # General settings
 DATABASE_FILE: data/dmi_sm_db.sqlite # Path to the SQLite database file
 
+DMI_SM_SERVER: http://localhost:5000 # DMI Service Manager server and port; used to receive status updates from services
+
 SECRET_KEY: secret key # Flask application secret key
 
 TRUSTED_PROXIES:
