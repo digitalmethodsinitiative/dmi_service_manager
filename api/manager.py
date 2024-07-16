@@ -24,7 +24,7 @@ def status_update():
     message = request.args.get("message", False)
     processed_records = request.args.get("processed_records", False)
     # Update the job
-    db.insert(f"UPDATE jobs SET status = ? {'message = ? ' if message else ''}{'processed_records = ? ' if processed_records else ''}{'completed_at = ? ' if status == 'complete' else ''}WHERE id = ?",
+    db.insert(f"UPDATE jobs SET status = ?{', message = ?' if message else ''}{', processed_records = ?' if processed_records else ''}{', completed_at = ?' if status == 'complete' else ''} WHERE id = ?",
                   [status] + ([message] if message else []) + ([processed_records] if processed_records else []) + ([int(datetime.now().timestamp())] if status == 'complete' else []) + [key])
 
     app.logger.info(f"Updated job {key}: {status}{' - '+ message if message else ''}")
