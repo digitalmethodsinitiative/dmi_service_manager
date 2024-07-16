@@ -38,6 +38,7 @@ class Database:
                     completed_at INTEGER,
                     status TEXT,
                     message TEXT,
+                    processed_records INTEGER,
                     details JSON,
                     results JSON
                 )

@@ -8,9 +8,12 @@ from api import app, db
 @app.route('/status_update/', methods=['POST'])
 def status_update():
     """
-    Update the status of a service
-    :param key:
-    :param value:
+    Update the status of a service. Optionally provide a status message and/or the number of processed records.
+
+    :param int key:
+    :param str status:
+    :param str message:
+    :param int processed_records:
     :return:
     """
     key = request.args.get("key")
@@ -18,13 +21,11 @@ def status_update():
     if not key or not status:
         return jsonify({"status": "error", "message": "status_update must include both 'key' and 'status'"}), 400
 
-    message = request.args.get("message")
-    if "status" == "complete":
-        db.insert("UPDATE jobs SET status = ?, completed_at = ? WHERE id = ?", (status, int(datetime.now().timestamp()), key))
-    elif message:
-        db.insert("UPDATE jobs SET status = ?, message = ? WHERE id = ?", (status, message, key))
-    else:
-        db.insert("UPDATE jobs SET status = ? WHERE id = ?", (status, key))
+    message = request.args.get("message", False)
+    processed_records = request.args.get("processed_records", False)
+    # Update the job
+    db.insert(f"UPDATE jobs SET status = ? {'message = ? ' if message else ''}{'processed_records = ? ' if processed_records else ''}{'completed_at = ? ' if status == 'complete' else ''}WHERE id = ?",
+                  [status] + ([message] if message else []) + ([processed_records] if processed_records else []) + ([int(datetime.now().timestamp())] if status == 'complete' else []) + [key])
 
     app.logger.info(f"Updated job {key}: {status}{' - '+ message if message else ''}")
     return jsonify({"status": "success"}), 200
