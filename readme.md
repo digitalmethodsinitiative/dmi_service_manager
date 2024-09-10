@@ -47,7 +47,7 @@ The local and remote endpoints are used to specify the location where the volume
 obtained.
 
 ## Docker images setup
-Example Docker images can be found in the [DMI Dockerized Services repository](https//github.com/digitalmethodsinitiative/dmi_dockerized_services/tree/main?tab=readme-ov-file#dmi-dockerized-services).
+Example Docker images can be found in the [DMI Dockerized Services repository](https://github.com/digitalmethodsinitiative/dmi_dockerized_services/tree/main?tab=readme-ov-file#dmi-dockerized-services).
 Essentially, any image can be used with the idea that you can first upload relevant files to the server and then run the
 container which should save any results to the `data_path` folder. These can then be retrieved by the user.
 
