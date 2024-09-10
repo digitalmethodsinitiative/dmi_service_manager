@@ -51,7 +51,7 @@ Example Docker images can be found in the [DMI Dockerized Services repository](h
 Essentially, any image can be used with the idea that you can first upload relevant files to the server and then run the
 container which should save any results to the `data_path` folder. These can then be retrieved by the user.
 
-You will need to have the images available on the server where the DMI Service Manager is running. You can either build 
+You will need to have the Docker images available on the server where the DMI Service Manager is running. You can either build 
 them or download them from a repository (such as Docker Hub). The images we have built are quite large as they contain 
 various ML models and their dependencies. We thus have not uploaded them to Docker Hub, and they will need to be built 
 following the instructions in the DMI Dockerized Services repository.
