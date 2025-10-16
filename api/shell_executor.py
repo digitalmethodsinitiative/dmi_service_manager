@@ -9,6 +9,7 @@ from flask_shell2http import Shell2HTTP
 from pathlib import Path
 import functools
 from flask import request, url_for
+import shlex
 
 from api import app, config_data, db
 
@@ -27,7 +28,7 @@ def create_job_record(f):
         # Add database key to callback in order to pick up when service is complete
         if "callback_context" not in request.json:
             request.json["callback_context"] = {}
-        request.json["callback_context"].update({"db_key": key})
+        request.json["callback_context"].update({"db_key": key, "route": request.path})
 
         # Pass key and server address to service if requested
         #NOTE: request.json["args"] is a list of arguments for the shell command; we can add the job key here for services able to utilize and update status
@@ -65,9 +66,10 @@ def finish_service(extra_callback_context, future: Future):
     """
     db_key = extra_callback_context.get("db_key")
     if db_key and future.done():
-        returncode = future.result().get("returncode", None)
+        result = future.result()
+        returncode = result.get("returncode", None)
         status = "complete" if returncode == 0 else "error"
-        db.insert("UPDATE jobs SET status = ?, completed_at = ?, results = ? WHERE id = ?", (status, int(datetime.now().timestamp()), json.dumps(future.result()), db_key))
+        db.insert("UPDATE jobs SET status = ?, completed_at = ?, results = ? WHERE id = ?", (status, int(datetime.now().timestamp()), json.dumps(result), db_key))
         app.logger.info(f"Service complete: job {db_key} - {status}")
         return
     message = (
@@ -88,6 +90,7 @@ else:
     # Setup Executor
     executor = Executor(app)
     shell2http = Shell2HTTP(app=app, executor=executor, base_url_prefix=base_url_prefix)
+    app.config["endpoint_meta"] = {}
 
     # Local path
     if config_data.get('4CAT_DATASETS_PATH', False):
@@ -106,24 +109,50 @@ else:
     # User and group settings
     service_user = config_data.get('SERVICE_USER', None)
     service_group = config_data.get('SERVICE_GROUP', None)
+    # Optional persistent home on host for containers (create it and chmod 0777)
+    container_home_host = config_data.get('CONTAINER_HOME_HOST', None)  # e.g. /opt/dmi_service_manager/container-home
 
-    # Build base docker command
-    if service_user and service_group:
-        base_docker_command = f"docker run --rm --user {service_user}:{service_group} --network host {'--gpus all ' if config_data.get('GPU_ENABLED', False) else ''}"
-    else:
-        base_docker_command = f"docker run --rm --network host {'--gpus all ' if config_data.get('GPU_ENABLED', False) else ''}"
+    def make_base_args():
+        args = ['docker', 'run', '--rm', '--network', 'host']
+        if config_data.get('GPU_ENABLED', False):
+            args += ['--gpus', 'all']
+        return args
 
     # Register endpoints
     for endpoint, endpoint_data in active_endpoints.items():
         if fourcat_path and endpoint_data['local']:
-            # Docker ENV variable? Could add status pingback route to ENV variable
-            shell2http.register_command(endpoint=f"{endpoint}_local",
-                                        command_name=f"{base_docker_command} -v {fourcat_path}:{endpoint_data['data_path']} {endpoint_data['image_name']} {endpoint_data['command']}",
-                                        decorators=[create_job_record], callback_fn=finish_service)
-            app.config["endpoints"].add(f"{base_url_prefix}{endpoint}_local")
+            args = make_base_args()
+            args += ['-v', f'{str(fourcat_path)}:{endpoint_data["data_path"]}']
+            args += [endpoint_data['image_name']]
+            args += shlex.split(endpoint_data['command'])
+            route = f"{endpoint}_local"
+            shell2http.register_command(
+                endpoint=route,
+                command_name=shlex.join(args),
+                decorators=[create_job_record],
+                callback_fn=finish_service
+            )
+            app.config["endpoints"].add(f"{base_url_prefix}{route}")
+            app.config["endpoint_meta"][f"{base_url_prefix}{route}"] = {
+                "mount_base": str(fourcat_path),
+                "image_name": endpoint_data['image_name'],
+            }
+
         if uploads_path and endpoint_data['remote']:
-            shell2http.register_command(endpoint=f"{endpoint}_remote",
-                                        command_name=f"{base_docker_command} -v {uploads_path}:{endpoint_data['data_path']} {endpoint_data['image_name']} {endpoint_data['command']}",
-                                        decorators=[create_job_record], callback_fn=finish_service)
-            app.config["endpoints"].add(f"{base_url_prefix}{endpoint}_remote")
+            args = make_base_args()
+            args += ['-v', f'{str(uploads_path)}:{endpoint_data["data_path"]}']
+            args += [endpoint_data['image_name']]
+            args += shlex.split(endpoint_data['command'])
+            route = f"{endpoint}_remote"
+            shell2http.register_command(
+                endpoint=route,
+                command_name=shlex.join(args),
+                decorators=[create_job_record],
+                callback_fn=finish_service
+            )
+            app.config["endpoints"].add(f"{base_url_prefix}{route}")
+            app.config["endpoint_meta"][f"{base_url_prefix}{route}"] = {
+                "mount_base": str(uploads_path),
+                "image_name": endpoint_data['image_name'],
+            }
 
