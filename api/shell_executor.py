@@ -103,17 +103,27 @@ else:
         app.logger.warning("UPLOAD_FOLDER_PATH not set; remote endpoints not available")
         uploads_path = None
 
+    # User and group settings
+    service_user = config_data.get('SERVICE_USER', None)
+    service_group = config_data.get('SERVICE_GROUP', None)
+
+    # Build base docker command
+    if service_user and service_group:
+        base_docker_command = f"docker run --rm --user {service_user}:{service_group} --network host {'--gpus all ' if config_data.get('GPU_ENABLED', False) else ''}"
+    else:
+        base_docker_command = f"docker run --rm --network host {'--gpus all ' if config_data.get('GPU_ENABLED', False) else ''}"
+
     # Register endpoints
     for endpoint, endpoint_data in active_endpoints.items():
         if fourcat_path and endpoint_data['local']:
             # Docker ENV variable? Could add status pingback route to ENV variable
             shell2http.register_command(endpoint=f"{endpoint}_local",
-                                        command_name=f"docker run --rm --network host -v {fourcat_path}:{endpoint_data['data_path']} {'--gpus all ' if config_data.get('GPU_ENABLED', False) else ''}{endpoint_data['image_name']} {endpoint_data['command']}",
+                                        command_name=f"{base_docker_command} -v {fourcat_path}:{endpoint_data['data_path']} {endpoint_data['image_name']} {endpoint_data['command']}",
                                         decorators=[create_job_record], callback_fn=finish_service)
             app.config["endpoints"].add(f"{base_url_prefix}{endpoint}_local")
         if uploads_path and endpoint_data['remote']:
             shell2http.register_command(endpoint=f"{endpoint}_remote",
-                                        command_name=f"docker run --rm --network host -v {uploads_path}:{endpoint_data['data_path']} {'--gpus all ' if config_data.get('GPU_ENABLED', False) else ''}{endpoint_data['image_name']} {endpoint_data['command']}",
+                                        command_name=f"{base_docker_command} -v {uploads_path}:{endpoint_data['data_path']} {endpoint_data['image_name']} {endpoint_data['command']}",
                                         decorators=[create_job_record], callback_fn=finish_service)
             app.config["endpoints"].add(f"{base_url_prefix}{endpoint}_remote")
 

@@ -30,6 +30,11 @@ ALLOWED_EXTENSIONS: # extensions allowed to be uploaded
 # Enable GPU support
 GPU_ENABLED: True
 
+# Unix users and groups to run services as (if EITHER left blank, no user will be passed to Docker)
+# Use `id -u yourhostuser` and `id -g yourhostgroup` to obtain IDs for best results
+SERVICE_USER: 
+SERVICE_GROUP: 
+
 # Set up Docker endpoints; these images must be available locally (use Docker to pull and tag as necessary)
 DOCKER_ENDPOINTS:
   whisper:  # https://github.com/digitalmethodsinitiative/dmi_dockerized_services/
