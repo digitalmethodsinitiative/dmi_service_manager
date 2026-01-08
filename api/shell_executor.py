@@ -112,16 +112,17 @@ else:
     # Optional persistent home on host for containers (create it and chmod 0777)
     container_home_host = config_data.get('CONTAINER_HOME_HOST', None)  # e.g. /opt/dmi_service_manager/container-home
 
-    def make_base_args():
+    def make_base_args(gpu=True):
         args = ['docker', 'run', '--rm', '--network', 'host']
-        if config_data.get('GPU_ENABLED', False):
+        if config_data.get('GPU_ENABLED', False) and gpu:
             args += ['--gpus', 'all']
         return args
 
     # Register endpoints
     for endpoint, endpoint_data in active_endpoints.items():
+        use_gpu = endpoint_data.get('gpu', True) # Default to True if not specified
         if fourcat_path and endpoint_data['local']:
-            args = make_base_args()
+            args = make_base_args(gpu=use_gpu)
             args += ['-v', f'{str(fourcat_path)}:{endpoint_data["data_path"]}']
             args += [endpoint_data['image_name']]
             args += shlex.split(endpoint_data['command'])
@@ -139,7 +140,7 @@ else:
             }
 
         if uploads_path and endpoint_data['remote']:
-            args = make_base_args()
+            args = make_base_args(gpu=use_gpu)
             args += ['-v', f'{str(uploads_path)}:{endpoint_data["data_path"]}']
             args += [endpoint_data['image_name']]
             args += shlex.split(endpoint_data['command'])
