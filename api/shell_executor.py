@@ -32,9 +32,10 @@ def create_job_record(f):
 
         # Set timeout from config if not already set in request
         # Flask-Shell2HTTP reads timeout from request.json, defaulting to 3600 seconds
+        # Max timeout appears to be around 2147483 seconds (~24.8 days) due to system limits
         if "timeout" not in request.json:
-            command_timeout = config_data.get('SHELL_COMMAND_TIMEOUT', 0)  # 0 = no timeout
-            request.json["timeout"] = command_timeout if command_timeout != 0 else None
+            command_timeout = config_data.get('SHELL_COMMAND_TIMEOUT', 0)
+            request.json["timeout"] = command_timeout if command_timeout > 0 else 2147483  # ~24.8 days
 
         # Pass key and server address to service if requested
         #NOTE: request.json["args"] is a list of arguments for the shell command; we can add the job key here for services able to utilize and update status
