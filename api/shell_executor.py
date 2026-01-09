@@ -30,6 +30,12 @@ def create_job_record(f):
             request.json["callback_context"] = {}
         request.json["callback_context"].update({"db_key": key, "route": request.path})
 
+        # Set timeout from config if not already set in request
+        # Flask-Shell2HTTP reads timeout from request.json, defaulting to 3600 seconds
+        if "timeout" not in request.json:
+            command_timeout = config_data.get('SHELL_COMMAND_TIMEOUT', 0)  # 0 = no timeout
+            request.json["timeout"] = command_timeout if command_timeout != 0 else None
+
         # Pass key and server address to service if requested
         #NOTE: request.json["args"] is a list of arguments for the shell command; we can add the job key here for services able to utilize and update status
         if request.json.get("pass_key", False):
@@ -70,7 +76,8 @@ def finish_service(extra_callback_context, future: Future):
         returncode = result.get("returncode", None)
         status = "complete" if returncode == 0 else "error"
         db.insert("UPDATE jobs SET status = ?, completed_at = ?, results = ? WHERE id = ?", (status, int(datetime.now().timestamp()), json.dumps(result), db_key))
-        app.logger.info(f"Service complete: job {db_key} - {status}")
+        error_message = " - " + result.get("error") if returncode != 0 else ""
+        app.logger.info(f"Service complete: job {db_key} - {status}{error_message}")
         return
     message = (
             f"{'*' * 64}\n"
@@ -87,7 +94,12 @@ def finish_service(extra_callback_context, future: Future):
 if not active_endpoints:
     app.logger.warning("DOCKER_ENDPOINTS not set; no endpoints available")
 else:
-    # Setup Executor
+    # Setup Executor with no timeout (or use config_data.get('EXECUTOR_TIMEOUT', None))
+    app.config['EXECUTOR_TYPE'] = 'thread'
+    app.config['EXECUTOR_MAX_WORKERS'] = config_data.get('EXECUTOR_MAX_WORKERS', 5)
+    # Set to None for no timeout, or a specific value in seconds
+    app.config['EXECUTOR_PROPAGATE_EXCEPTIONS'] = True
+    
     executor = Executor(app)
     shell2http = Shell2HTTP(app=app, executor=executor, base_url_prefix=base_url_prefix)
     app.config["endpoint_meta"] = {}
