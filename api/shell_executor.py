@@ -8,7 +8,7 @@ from flask_executor.futures import Future
 from flask_shell2http import Shell2HTTP
 from pathlib import Path
 import functools
-from flask import request, url_for
+from flask import request, url_for, jsonify, make_response
 import shlex
 
 from api import app, config_data, db
@@ -19,6 +19,20 @@ base_url_prefix = "/api/"
 def create_job_record(f):
     @functools.wraps(f)
     def decorator(*args, **kwargs):
+        # Validate request JSON and `args` shape before creating a DB job
+        req_json = request.json if request.json is not None else {}
+        if not isinstance(req_json, dict):
+            return make_response(jsonify({"error": "Invalid JSON body: expected object"}), 400)
+
+        if "args" in req_json:
+            if not isinstance(req_json["args"], list):
+                return make_response(jsonify({"error": "Invalid 'args': expected a list of strings"}), 400)
+            for i, elem in enumerate(req_json["args"]):
+                if not isinstance(elem, str):
+                    return make_response(jsonify({
+                        "error": f"Invalid 'args' element at index {i}: expected str, got {type(elem).__name__}"
+                    }), 400)
+
         # Insert into database
         job_data = {"request_args": request.args, "request_json": request.json}
         app.logger.info(f"Creating job record for {request.path}: {job_data}")
